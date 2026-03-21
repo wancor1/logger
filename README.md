@@ -12,3 +12,5 @@ log=logger.log
 log('text')
 ```
 only.
+
+It’s a verbose though.
