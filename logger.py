@@ -176,10 +176,10 @@ class Logger:
         if isinstance(info,int) and len(self.LEVELS)-1 >= info: level,style=self.LEVELS[info],self.STYLES[info]
         ftext=f'[{tm}] {str(text)}'
         if isinstance(info,str):
-            ret=f'[{info }] {text}'
+            ret=f'[{info }] {ftext}'
             plog.print(f'[{info }] {ftext}',style=style)
         elif info>=0 and info<=2:
-            ret=f'[{level}] {text}'
+            ret=f'[{level}] {ftext}'
             plog.print(f'[{level}] {ftext}',style=style)
         else:
             ret=f"[CONSOLE ERROR] [{tm}] Unknown info number: {info}  ; {text}"
