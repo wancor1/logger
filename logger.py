@@ -2,6 +2,7 @@ import threading
 import ntplib
 import atexit
 import time
+import re
 import os
 
 from rich.console import Console
@@ -62,17 +63,17 @@ class Logger:
     ERRORSTYLE="dark_red"
     STYLES=["bright_white","bright_yellow","bright_red"]
 
-    def __init__(self,logstyle:str|None=None,outputfile:bool=False,file_path:str|None=None) -> None:
+    def __init__(self,logstyle:str='',outputfile:bool=False,file_path:str|None=None) -> None:
         """Initialize the Logger object.
         
         Parameters
         ----------
-        logstyle : str | None, optional
+        logstyle : str, optional
             logstyle  
                 i: info  
                 t: time  
                 e: text  
-            by default None
+            by default ''
         outputfile : bool, optional
             Whether to output to a file  
             by default False
@@ -81,7 +82,6 @@ class Logger:
             by default None
         """
         self.logstyle=logstyle
-
         ts=time.strftime("%Y-%m-%d-%H")
         self.outputfile=outputfile
         if not self.outputfile:
@@ -101,6 +101,38 @@ class Logger:
                     i+=1
             self.file_path = full_path
             self.offset()
+
+    def formatchanger(self, logstyle:str='') -> None:
+        """format changer
+        
+        Parameters
+        ----------
+        logstyle : str, optional
+            logstyle  
+                i: info  
+                t: time  
+                e: text  
+            by default ''
+        """
+        self.logstyle=logstyle
+
+    def formatter(self, template: str, **kwargs):
+        def repl(match):
+            key = match.group(1)
+            return str(kwargs.get(key, match.group(0)))
+        return re.sub(r"%(\w+)", repl, template)
+    
+    def print(self, text:str):
+        """
+        Igrone format
+
+        Parameters
+        ----------
+        text : str
+            text
+        """
+        print(ret:=f'{text}')
+        if self.outputfile: self.log2file(ret)
 
     def stylecolor(self) -> None:
         """
@@ -174,26 +206,37 @@ class Logger:
         tm=time.strftime("%H:%M:%S",ntime.now_struct()) # %Y:%m:%d:%H:%M:%S
         level=self.LEVELS[0]
         if isinstance(info,int) and len(self.LEVELS)-1 >= info: level,style=self.LEVELS[info],self.STYLES[info]
-        ftext=f'[{tm}] {str(text)}'
-        if isinstance(info,str):
-            ret=f'[{info }] {ftext}'
-            plog.print(f'[{info }] {ftext}',style=style)
-        elif info>=0 and info<=2:
-            ret=f'[{level}] {ftext}'
-            plog.print(f'[{level}] {ftext}',style=style)
+        if self.logstyle=='': 
+            ftext=f'[{tm}] {str(text)}'
+            if isinstance(info,str):  plog.print(ret := f'[{info }] {ftext}',style=style)
+            elif info>=0 and info<=2: plog.print(ret := f'[{level}] {ftext}',style=style)
+            else:                     plog.print(ret := f"[CONSOLE ERROR] [{tm}] Unknown info number: {info}  ; {text}",style=self.ERRORSTYLE)
         else:
-            ret=f"[CONSOLE ERROR] [{tm}] Unknown info number: {info}  ; {text}"
-            plog.print(f"[CONSOLE ERROR] [{tm}] Unknown info number: {info}  ; {text}",style=self.ERRORSTYLE)
+            ftext=self.formatter(self.logstyle,i=(info if isinstance(info,str) else level),t=tm,e=text)
+            if isinstance(info,str) : plog.print((ret := ftext), style=style)
+            elif info>=0 and info<=2: plog.print((ret := ftext), style=style)
+            else:                     plog.print(ret := f"[CONSOLE ERROR] [{tm}] Unknown info number: {info}  ; {text}",style=self.ERRORSTYLE)
         if self.outputfile: self.log2file(ret)
         return ret
 
 if __name__=='__main__':
     logger=Logger(outputfile=True)
+    logger.print('===normalstyle===')
     logger.log('testmessage')
     logger.log('warn log',1)
     logger.log('error log',2)
     logger.log('console error log',3)
     logger.log('text info log','test ')
     logger.offset()
-    if input('Show colors that can be used in styles?(y/n)>')=='y':
-        logger.stylecolor()
+    logger.print('===customstyle===')
+    logger.formatchanger(logstyle="%i: %e")
+    logger.log('testmessage')
+    logger.log('warn log',1)
+    logger.log('error log',2)
+    logger.log('console error log',3)
+    logger.log('text info log','test ')
+    logger.offset()
+    logger.print('===END===')
+    logger.formatchanger()
+    # if input('Show colors that can be used in styles?(y/n)>')=='y':
+    #     logger.stylecolor()
