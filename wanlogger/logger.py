@@ -23,10 +23,7 @@ class NetTime:
             "time.windows.com",
         ]
         self.sync()
-        self.thread = threading.Thread(
-            target=self._resync_loop,
-            daemon=True
-        )
+        self.thread = threading.Thread(target=self._resync_loop,daemon=True)
         self.thread.start()
         atexit.register(self.stop)
 
@@ -35,12 +32,12 @@ class NetTime:
         for server in self.servers:
             try:
                 r = c.request(server, timeout=3)
-                new_offset = r.tx_time - time.time()
+                new_offset = r.tx_time-time.time()-r.delay
                 with self._lock:
                     self.offset = new_offset
                 return
             except Exception:
-                continue
+                Logger.NTPERROR='NTP sync failed';continue
 
     def _resync_loop(self):
         while not self._stop_event.wait(self.interval):
@@ -57,35 +54,35 @@ class NetTime:
         self._stop_event.set()
 
 class Logger:
-    LEVELS=["info ","warn ","error"]
+    LEVELS=["info ","warn ","error","debug"]
     ERRORSTYLE="dark_red"
-    STYLES=["bright_white","bright_yellow","bright_red"]
-
+    STYLES=["bright_white","bright_yellow","bright_red","green4"]
+    NTPERROR:str=''
     def __init__(self,timestyle:str='%H:%M:%S',timesync:bool=True,logstyle:str='',outputfile:bool=False,file_path:str|None=None) -> None:
         """Initialize the Logger object.
 
         Parameters
         ----------
         timestyle : _type_, optional
-            Time style  
-            You should already know.  
-            ex) %Y:%m:%d:%H:%M:%S  
+            Time style
+            You should already know.
+            ex) %Y:%m:%d:%H:%M:%S
             by default '%H:%M:%S'
         timesync : bool, optional
-            Adjust log timestamps using NTP (simple correction)  
-            on/off  
+            Adjust log timestamps using NTP (simple correction)
+            on/off
             by default True
         logstyle : str, optional
-            logstyle  
-                i: info  
-                t: time  
-                e: text  
+            logstyle
+                i: info
+                t: time
+                e: text
             by default ''
         outputfile : bool, optional
-            Whether to output to a file  
+            Whether to output to a file
             by default False
         file_path : str | None, optional
-            file_path  
+            file_path
             by default None
         """
         self.plog = Console(highlight=False,markup=False)
@@ -94,11 +91,11 @@ class Logger:
         self.logstyle=logstyle
         ts=time.strftime("%Y-%m-%d-%H")
         self.outputfile=outputfile
-        
+
         self.timestyle=timestyle
-        
+
         pathlib.Path(f'{file_path}').mkdir(parents=True, exist_ok=True)
-        
+
         if not self.outputfile:
             self.file_path="Unexpected_log.log"
         else:
@@ -119,14 +116,14 @@ class Logger:
 
     def formatchanger(self, logstyle:str='') -> None:
         """format changer
-        
+
         Parameters
         ----------
         logstyle : str, optional
-            logstyle  
-                i: info  
-                t: time  
-                e: text  
+            logstyle
+                i: info
+                t: time
+                e: text
             by default ''
         """
         self.logstyle=logstyle
@@ -136,7 +133,7 @@ class Logger:
             key = match.group(1)
             return str(kwargs.get(key, match.group(0)))
         return re.sub(r"%(\w+)", repl, template)
-    
+
     def print(self, text:str):
         """
         Igrone format
@@ -151,7 +148,7 @@ class Logger:
 
     def stylecolor(self) -> None:
         """
-        Outputs colors that can be used in styles. 
+        Outputs colors that can be used in styles.
         """
         for i in ANSI_COLOR_NAMES.keys():
             self.log(f'color log color: {i}', 'color', i)
@@ -159,14 +156,14 @@ class Logger:
     def offset(self,logput:bool=True,level:int|str=0)  -> tuple[float | str, list[str]]|None:
         """
         Outputs the offset between the Local and the NTP server.
-        
+
         Parameters
         ----------
         logput : bool, optional
-            Whether to output to the log  
+            Whether to output to the log
             by default True
         level : int | str, optional
-            info level  
+            info level
             by default 0
 
         Returns
@@ -182,7 +179,6 @@ class Logger:
 
     def log2file(self,text:str) -> None:
         """
-        ## work in progress
         Outputs the log to file.
 
         Parameters
@@ -202,37 +198,39 @@ class Logger:
         text : Any
             The string to be output.
         info : int | str, optional
-            Sets the info level.  
-            If a string is provided, it will be inserted into info.  
-            0:info  
-            1:warn  
-            2:error  
+            Sets the info level.
+            If a string is provided, it will be inserted into info.
+            0:info
+            1:warn
+            2:error
+            3:debug
             by default 0
         style : str, optional
-            Log color.  
-            Only works when info is a string.  
+            Log color.
+            Only works when info is a string.
             by default None
 
         Returns
         -------
         str
-            Returns the log contents as a string.  
+            Returns the log contents as a string.
             Color information will be lost in the process.
         """
+        if self.NTPERROR!='': temp=self.NTPERROR;self.NTPERROR='';self.log(f'{temp}',2)
         if self.timesync: tm=time.strftime(self.timestyle,self.ntime.now_struct()) # %Y:%m:%d:%H:%M:%S
         else:             tm=time.strftime(self.timestyle)
         level=self.LEVELS[0]
         if isinstance(info,int) and len(self.LEVELS)-1 >= info: level,style=self.LEVELS[info],self.STYLES[info]
-        if self.logstyle=='': 
+        if self.logstyle=='':
             ftext=f'[{tm}] {str(text)}'
-            if isinstance(info,str):  self.plog.print(ret := f'[{info }] {ftext}',style=style)
-            elif info>=0 and info<=2: self.plog.print(ret := f'[{level}] {ftext}',style=style)
-            else:                     self.plog.print(ret := f"[CONSOLE ERROR] [{tm}] Unknown info number: {info}  ; {text}",style=self.ERRORSTYLE)
+            if isinstance(info,str): self.plog.print(ret := f'[{info }] {ftext}',style=style)
+            elif info>=0 and info<=len(self.LEVELS): self.plog.print(ret := f'[{level}] {ftext}',style=style)
+            else: self.plog.print(ret := f"[CONSOLE ERROR] [{tm}] Unknown info number: {info}  ; {text}",style=self.ERRORSTYLE)
         else:
             ftext=self.formatter(self.logstyle,i=(info if isinstance(info,str) else level),t=tm,e=text)
-            if isinstance(info,str) : self.plog.print((ret := ftext), style=style)
-            elif info>=0 and info<=2: self.plog.print((ret := ftext), style=style)
-            else:                     self.plog.print(ret := f"[CONSOLE ERROR] [{tm}] Unknown info number: {info}  ; {text}",style=self.ERRORSTYLE)
+            if isinstance(info,str): self.plog.print((ret := ftext), style=style)
+            elif info>=0 and info<=len(self.LEVELS): self.plog.print((ret := ftext), style=style)
+            else: self.plog.print(ret := f"[CONSOLE ERROR] [{tm}] Unknown info number: {info}  ; {text}",style=self.ERRORSTYLE)
         if self.outputfile: self.log2file(ret)
         return ret
 
@@ -240,17 +238,19 @@ if __name__=='__main__':
     logger=Logger(outputfile=True,file_path='logs')
     logger.print('===normalstyle===')
     logger.log('testmessage')
-    logger.log('warn log',1)
+    logger.log('warn log' ,1)
     logger.log('error log',2)
-    logger.log('console error log',3)
+    logger.log('debug log',3)
+    logger.log('console error log',99)
     logger.log('text info log','test ')
     logger.offset()
     logger.print('===customstyle===')
     logger.formatchanger(logstyle="%i: %e")
     logger.log('testmessage')
-    logger.log('warn log',1)
+    logger.log('warn log' ,1)
     logger.log('error log',2)
-    logger.log('console error log',3)
+    logger.log('debug log',3)
+    logger.log('console error log',99)
     logger.log('text info log','test ')
     logger.offset()
     logger.print('===END===')
