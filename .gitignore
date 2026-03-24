@@ -1,3 +1,4 @@
 *.log
 dist/*
 wanlogger.egg-info/*
+build.*
