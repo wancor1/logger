@@ -1,17 +1,17 @@
 # wanlogger
 
-A simple Python logger that can output logs while correcting the time via NTP.
+A simple Python logger that can output logs while correcting the time via NTP.  
 Supports console (color display) and file output.
 
 ## Usage
 
-You can create a log with:
+You can create a log with:  
 ```py
 log(text, level)
 ```
-If the `level` is not specified, it defaults to `info`.
+If the `level` is not specified, it defaults to `info`.  
 
-Example:
+Example:  
 ```py
 import wanlogger
 
@@ -31,13 +31,13 @@ Value | Content
 2 | error
 3 | debug
 
-Can also be specified as a string:
+Can also be specified as a string:  
 ```py
 logger.log("custom", "TEST")
 ```
 
 ## Changing the Format
-Can be changed when creating the class or via `logger.formatchanger`.
+Can be changed when creating the class or via `logger.formatchanger`.  
 
 Variable | Content
 -|-
@@ -45,10 +45,10 @@ Variable | Content
 %i | Level
 %e | Message
 
-By default, it is displayed as follows:
+By default, it is displayed as follows:  
 ![default style log](https://github.com/wancor1/logger/blob/main/normalstyle.png?raw=true)
 
-Example of a custom format:
+Example of a custom format:  
 ![custom style log](https://github.com/wancor1/logger/blob/main/customstyle.png?raw=true)
 
 ## File Output
@@ -56,15 +56,15 @@ Off by default.
 
 Files with the same name are automatically numbered sequentially.
 
-Example:
+Example:  
 ```py
 logger = Logger(outputfile=True, file_path="logs")
 ```
 
 ## NTP Time Sync
-Uses time obtained via NTP.
-Resyncs every 30 minutes by default.
-Can be turned off by setting `timesync` to False when creating the class.
+Uses time obtained via NTP.  
+Resyncs every 30 minutes by default.  
+Can be turned off by setting `timesync` to False when creating the class.  
 
 ## Others
 - timestyle
