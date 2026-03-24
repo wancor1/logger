@@ -1,4 +1,5 @@
 import threading
+import pathlib
 import ntplib
 import atexit
 import time
@@ -95,6 +96,8 @@ class Logger:
         self.outputfile=outputfile
         
         self.timestyle=timestyle
+        
+        pathlib.Path(f'{file_path}').mkdir(parents=True, exist_ok=True)
         
         if not self.outputfile:
             self.file_path="Unexpected_log.log"
@@ -234,7 +237,7 @@ class Logger:
         return ret
 
 if __name__=='__main__':
-    logger=Logger(outputfile=True)
+    logger=Logger(outputfile=True,file_path='logs')
     logger.print('===normalstyle===')
     logger.log('testmessage')
     logger.log('warn log',1)
