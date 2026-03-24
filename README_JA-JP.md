@@ -46,10 +46,10 @@ class作成時または`logger.formatchanger`で変更可能
 %e|メッセージ
 
 デフォルトでは以下のように表示される
-![default style log](normalstyle.png)
+![default style log](https://github.com/wancor1/logger/blob/main/normalstyle.png?raw=true)
 
 カスタムフォーマットの例
-![custom style log](customstyle.png)
+![custom style log](https://github.com/wancor1/logger/blob/main/customstyle.png?raw=true)
 
 ## ファイル出力
 標準ではオフ

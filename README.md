@@ -46,10 +46,10 @@ Variable | Content
 %e | Message
 
 By default, it is displayed as follows:
-![default style log](normalstyle.png)
+![default style log](https://github.com/wancor1/logger/blob/main/normalstyle.png?raw=true)
 
 Example of a custom format:
-![custom style log](customstyle.png)
+![custom style log](https://github.com/wancor1/logger/blob/main/customstyle.png?raw=true)
 
 ## File Output
 Off by default.
