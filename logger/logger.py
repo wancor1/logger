@@ -55,19 +55,25 @@ class NetTime:
     def stop(self):
         self._stop_event.set()
 
-
-ntime = NetTime()
-plog = Console(highlight=False,markup=False)
 class Logger:
     LEVELS=["info ","warn ","error"]
     ERRORSTYLE="dark_red"
     STYLES=["bright_white","bright_yellow","bright_red"]
 
-    def __init__(self,logstyle:str='',outputfile:bool=False,file_path:str|None=None) -> None:
+    def __init__(self,timestyle:str='%H:%M:%S',timesync:bool=True,logstyle:str='',outputfile:bool=False,file_path:str|None=None) -> None:
         """Initialize the Logger object.
-        
+
         Parameters
         ----------
+        timestyle : _type_, optional
+            Time style  
+            You should already know.  
+            ex) %Y:%m:%d:%H:%M:%S  
+            by default '%H:%M:%S'
+        timesync : bool, optional
+            Adjust log timestamps using NTP (simple correction)  
+            on/off  
+            by default True
         logstyle : str, optional
             logstyle  
                 i: info  
@@ -81,9 +87,15 @@ class Logger:
             file_path  
             by default None
         """
+        self.plog = Console(highlight=False,markup=False)
+        self.ntime=NetTime()
+        self.timesync:bool=timesync
         self.logstyle=logstyle
         ts=time.strftime("%Y-%m-%d-%H")
         self.outputfile=outputfile
+        
+        self.timestyle=timestyle
+        
         if not self.outputfile:
             self.file_path="Unexpected_log.log"
         else:
@@ -141,7 +153,7 @@ class Logger:
         for i in ANSI_COLOR_NAMES.keys():
             self.log(f'color log color: {i}', 'color', i)
 
-    def offset(self,logput:bool=True,level:int|str=0)  -> tuple[float | str, list[str]]:
+    def offset(self,logput:bool=True,level:int|str=0)  -> tuple[float | str, list[str]]|None:
         """
         Outputs the offset between the Local and the NTP server.
         
@@ -161,8 +173,9 @@ class Logger:
         """
         if logput:
             self.log(f'Local Time is {time.strftime("%Y:%m:%d:%H:%M:%S")}',level)
-            self.log(f'{'Late' if ntime.offset > 0 else 'Early'}: {abs(ntime.offset):.5f}sec',level)
-        return ntime.offset, [f'Local Time is {time.strftime("%Y:%m:%d:%H:%M:%S")}',f'{'Late' if ntime.offset > 0 else 'Early'}: {abs(ntime.offset):.5f}sec']
+            self.log(f'NTP Time is {time.strftime("%Y:%m:%d:%H:%M:%S",self.ntime.now_struct())}',level)
+            self.log(f'{'Late' if self.ntime.offset > 0 else 'Early'}: {abs(self.ntime.offset):.5f}sec',level)
+        return self.ntime.offset, [f'Local Time is {time.strftime("%Y:%m:%d:%H:%M:%S")}',f'{'Late' if self.ntime.offset > 0 else 'Early'}: {abs(self.ntime.offset):.5f}sec']
 
     def log2file(self,text:str) -> None:
         """
@@ -203,19 +216,20 @@ class Logger:
             Returns the log contents as a string.  
             Color information will be lost in the process.
         """
-        tm=time.strftime("%H:%M:%S",ntime.now_struct()) # %Y:%m:%d:%H:%M:%S
+        if self.timesync: tm=time.strftime(self.timestyle,self.ntime.now_struct()) # %Y:%m:%d:%H:%M:%S
+        else:             tm=time.strftime(self.timestyle)
         level=self.LEVELS[0]
         if isinstance(info,int) and len(self.LEVELS)-1 >= info: level,style=self.LEVELS[info],self.STYLES[info]
         if self.logstyle=='': 
             ftext=f'[{tm}] {str(text)}'
-            if isinstance(info,str):  plog.print(ret := f'[{info }] {ftext}',style=style)
-            elif info>=0 and info<=2: plog.print(ret := f'[{level}] {ftext}',style=style)
-            else:                     plog.print(ret := f"[CONSOLE ERROR] [{tm}] Unknown info number: {info}  ; {text}",style=self.ERRORSTYLE)
+            if isinstance(info,str):  self.plog.print(ret := f'[{info }] {ftext}',style=style)
+            elif info>=0 and info<=2: self.plog.print(ret := f'[{level}] {ftext}',style=style)
+            else:                     self.plog.print(ret := f"[CONSOLE ERROR] [{tm}] Unknown info number: {info}  ; {text}",style=self.ERRORSTYLE)
         else:
             ftext=self.formatter(self.logstyle,i=(info if isinstance(info,str) else level),t=tm,e=text)
-            if isinstance(info,str) : plog.print((ret := ftext), style=style)
-            elif info>=0 and info<=2: plog.print((ret := ftext), style=style)
-            else:                     plog.print(ret := f"[CONSOLE ERROR] [{tm}] Unknown info number: {info}  ; {text}",style=self.ERRORSTYLE)
+            if isinstance(info,str) : self.plog.print((ret := ftext), style=style)
+            elif info>=0 and info<=2: self.plog.print((ret := ftext), style=style)
+            else:                     self.plog.print(ret := f"[CONSOLE ERROR] [{tm}] Unknown info number: {info}  ; {text}",style=self.ERRORSTYLE)
         if self.outputfile: self.log2file(ret)
         return ret
 
