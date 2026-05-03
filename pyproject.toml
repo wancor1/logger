@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wanlogger"
-version = "1.2.4"
+version = "1.2.5"
 description = "verbose logger."
 authors = [{name="wancoro_inu"}]
 readme = "README.md"
