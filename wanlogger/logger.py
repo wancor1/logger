@@ -94,7 +94,8 @@ class Logger:
 
         self.timestyle=timestyle
 
-        pathlib.Path(f'{file_path}').mkdir(parents=True, exist_ok=True)
+        if file_path==None:
+            pathlib.Path(f'{file_path}').mkdir(parents=True, exist_ok=True)
 
         if not self.outputfile:
             self.file_path="Unexpected_log.log"
