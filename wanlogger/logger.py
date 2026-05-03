@@ -94,7 +94,7 @@ class Logger:
 
         self.timestyle=timestyle
 
-        if file_path==None:
+        if file_path!=None:
             pathlib.Path(f'{file_path}').mkdir(parents=True, exist_ok=True)
 
         if not self.outputfile:
